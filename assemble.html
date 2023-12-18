@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Ode to Music</title>
+<script type=module>
+import zim from "https://zimjs.com/cdn/015/zim_game";
+const assets = [
+// different player choices    
+'nancy-idle.json','nancy-idle.png',
+// different enemy choices
+"shuriken.png",
+// note
+"tone.png", "bar.png", "note.jpeg", "note.png", "bar-black.png",
+// magic
+"magic.png","crystal.png", "energy.png",
+// character sfx
+"hurt.wav", "lets-go.wav", "game-over.wav", "note.mp3", "healing.wav",
+// ode to joy music plus parts
+"otj-1.mp3", "otj-2.mp3", "otj-3.mp3", "otj-4.mp3", "ode-to-joy-complete.mp3",
+// bg music
+"cyberpunk-moonlight-sonata-beethoven.mp3", "pulse.wav",
+// font
+"https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap"];
+
+//~~~~~~~~~~~~~~~~~~ ZIM Frame Variables ~~~~~~~~~~~~~~~~~~
+const path = "assets/";
+const scaling = "fit";
+const sWidth = 960;
+const sHeight = 540;
+const color = black;
+const outerColor = darker;
+
+new Frame(scaling, sWidth, sHeight, color, outerColor, ready, assets, path);
+function ready() {    
+//~~~~~~~~~~~~~~~~~~ UI ~~~~~~~~~~~~~~~~~~
+const bgPic = new Pic("7.png").sca(0.5).centerReg().pos(0, 0, CENTER, CENTER).bot();
+const hint = new Label({
+    text: "Create Ode to Joy to revive Bohemian Floyd by dropping the notes EXACTLY on the center of the magic orb!",
+    color: white,
+    size: 14,
+    font: "MedievalSharp"
+}).pos(30, 50, LEFT, TOP);
+const ctr = new Label({
+    text: "Click on the notes to hear them!",
+    color: white,
+    size: 12,
+    font: "MedievalSharp"
+}).pos(50, 220, LEFT, TOP).vis(true);
+const makeSure = new Label({
+    text: "Make sure to drop them in the center!",
+    color: white,
+    size: 12,
+    font: "MedievalSharp"
+}).pos(120, 180, RIGHT, TOP).vis(true);
+let retry = new Button({label: "Retry?", width: 180,height:40, color: black,backgroundColor:white,rollBackgroundColor: "green", rollColor: "white"});
+let compose = new Button({label: "Compose!"});
+//let bar = new Pic("bar-black.png").sca(0.13).pos(50, 280, CENTER, BOTTOM).drag();
+// const barContainer = new Container(bar.width, bar.height).addTo();
+// barContainer.pos(50, 300, CENTER, BOTTOM);
+// bar.addTo(barContainer);
+
+//~~~~~~~~~~~~~~~~~~ Audio - BG & SFX ~~~~~~~~~~~~~~~~~~
+const tempo = 52;
+const beat = 60/tempo;
+//const bg = new Aud("cyberpunk-moonlight-sonata-beethoven.mp3", 0.1, true).play();
+const pulse = new Aud("pulse.wav", 0.3, true).play();
+const hurt = new Aud("hurt.wav", 0.6, false);
+const noted = new Aud("note.mp3", 0.6, false);
+const letsGo = new Aud("lets-go.wav", 0.6, false);
+const gameOver = new Aud("game-over.wav", 0.6, false);
+const odeToJoy = new Aud("ode-to-joy-complete.mp3", 0.6, false);
+const otj1 = new Aud("otj-1.mp3", 0.6, false);
+const otj2 = new Aud("otj-2.mp3", 0.6, false);
+const otj3 = new Aud("otj-3.mp3", 0.6, false);
+const otj4 = new Aud("otj-4.mp3", 0.6, false);
+otj1.interrupt = "any";
+otj2.interrupt = "any";
+otj3.interrupt = "any";
+otj4.interrupt = "any";
+
+
+
+//~~~~~~~~~~~~~~~~~~ Player ~~~~~~~~~~~~~~~~~~
+let playerScale = 0.25;
+const glenda = new Sprite({json:"nancy-idle.json"}).sca(playerScale).pos(100, 100, LEFT, BOTTOM).run({loop:true});
+// const monster = new Pic("monster.png").sca(playerScale*0.7).pos(40, 60, RIGHT, BOTTOM);
+// const monster = new Rectangle(1000,500).sca(playerScale*0.7).pos(40, 60, RIGHT, BOTTOM);
+const monster = new Container().addTo();
+
+let magicScale = 0.16;
+const energy = new Pic("energy.png").sca(magicScale)
+            .centerReg()
+            .pos(40, -80, CENTER, CENTER);
+const crystal = new Pic("crystal.png")
+            .sca(magicScale)
+            .centerReg()
+            .pos(40, -80, CENTER, CENTER);
+const magic = new Pic("magic.png")
+            .sca(magicScale)
+            .centerReg()
+            .pos(40, -80, CENTER, CENTER);
+
+crystal.animate({
+    props: {rotation:-360},
+    time: beat*40,
+    ease: "linear",
+    loop: true
+});
+
+energy.animate({
+    props: {rotation:360},
+    time: beat*40,
+    ease: "linear",
+    loop: true
+});
+
+magic.animate({
+    props: {alpha:0.6, scale: magicScale*1.03},
+    time: beat,
+    ease: "linear",
+    loop: true,
+    rewind: true
+});
+
+energy.addTo(monster);
+crystal.addTo(monster);
+magic.addTo(monster);
+
+energy.center(monster);
+crystal.center(monster);
+magic.center(monster);
+
+let musicalNotes = [otj1, otj2, otj3, otj4];
+let correctOrder = [otj1, otj2, otj3, otj4];
+let notes = [];
+function generateNotes(numberOfNotes) {
+    const noteScale = 0.1;
+    const noteLocations = [
+        { x: 100, y: 100 },
+        { x: 180, y: 90 },
+        { x: 240, y: 120 },
+        { x: 300, y: 95 }
+    ];
+    for (let i = 0; i < numberOfNotes; i++) {
+        const location = noteLocations[i];
+        const note = new Pic("tone.png")
+            .sca(noteScale)
+            .pos(location.x, location.y, LEFT, TOP);
+        note.wiggle("y", note.y, 2, 10, beat, beat*3);
+        note.wiggle("x", note.x, 2, 10, beat, beat*4);
+        note.drag();
+        note.musicalNote = musicalNotes[i];
+        if(note.hitTestRect(monster, 2)){
+            zog("composed");
+            //note.musicalNote.play();
+        }
+        note.on("mouseover", function() {
+            ctr.vis(true);
+        });
+        note.on("mouseout", function() {
+            ctr.vis(false);
+        });
+        note.on("click", function() {
+            note.musicalNote.play();
+        });
+        
+        notes.push(note);
+    }
+    return notes;
+}
+notes = generateNotes(4);
+
+// const correctOrder = [0, 1, 2, 3];
+let currentArrangement = [];
+const checkArrangeLabel = new Label({
+    text: "Revive!",
+    color: white,
+    size: 22,
+    font: "MedievalSharp"
+});
+let checkButton = new Button({
+    label: checkArrangeLabel, 
+    width: 110,
+    height:35,
+    color: "white",
+    backgroundColor:"green",
+    rollBackgroundColor: "null",
+    rollColor: "pink"})
+.pos(50, 50, CENTER, CENTER).vis(false); 
+checkButton.on("click", ()=>{
+    location.href = "choice.html";
+});
+retry.size = 14;
+retry.pos(50, 50, CENTER, CENTER).vis(false);
+
+function updateArrangement(note, index) {
+    currentArrangement = []; // Reset the array
+
+    notes.forEach((note, index) => {
+        // Debugging: Log each note's position and hit test result
+        let isOverBar = note.hitTestRect(monster, 2);
+        zog(`Note ${index}: x=${note.x}, y=${note.y}, overBar=${isOverBar}`);
+        if (typeof isOverBar === "undefined" || !isOverBar) {
+            makeSure.vis(true);
+        }
+        
+        if (isOverBar) {
+            //makeSure.vis(false);
+            currentArrangement.push(index);
+            note.vis(false);
+            note.bot();
+        }
+    });
+
+    // Debugging: Log current arrangement
+    zog("Current arrangement: " + JSON.stringify(currentArrangement));
+}
+
+
+Ticker.add(checkSpell);
+
+function checkSpell(){
+    if(currentArrangement.length === 4){
+        checkButton.vis(true);
+        const buttonVisible = new Aud("healing.wav", 0.6, false).play();
+        Ticker.remove(checkSpell);
+    }
+}
+
+notes.forEach((note, index) => {
+    note.on("pressup", () => {
+        updateArrangement();
+        //note.removeFrom();
+    });
+});
+
+function checkArrangement(){
+    zog("Current arrangement: " + JSON.stringify(currentArrangement));
+        // Check if all notes are in place
+    if (currentArrangement.length === correctOrder.length &&
+        currentArrangement.every((value, index) => value === correctOrder[index])){
+        zog("correct");
+        //bg.pause();
+        odeToJoy.play();
+    } else {
+        zog("incorrect");
+        retryGame();
+    }
+    // Reset the arrangement after checking
+    currentArrangement = [];
+}
+
+function retryGame(){
+    checkButton.vis(false);
+    retry.vis(true);
+    retry.on("click", function() {
+        location.reload();
+    });
+}
+
+// // Update the drag logic
+// notes.forEach((note, index) => {
+//     note.on("drag", () => {
+//         if (note.hitTestRect(bar) && !currentArrangement.includes(index)) {
+//             currentArrangement.push(index);
+//             // Debugging: Log when a note is added
+//             zog("Note added: " + index);
+//         } else if (!note.hitTestRect(bar) && currentArrangement.includes(index)) {
+//             let idx = currentArrangement.indexOf(index);
+//             currentArrangement.splice(idx, 1);
+//             // Debugging: Log when a note is removed
+//             zog("Note removed: " + index);
+//         }
+//     });
+// });
+
+    // function melodyOnArrange(noteIndex){
+    //     currentArrangement.push(noteIndex);
+    //     checkArrangement();
+    // }
+
+}
+</script>
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+</head>
+<body></body>
+</html>

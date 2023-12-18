@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Ode to Music - Srivatsan Rangarajan - ZIM Code Creativity</title>
+<script type=module>
+import zim from "https://zimjs.com/cdn/015/zim_game";
+const assets = [
+// different player choices    
+'glide.json','glide.png',
+// different enemy choices
+"shuriken.png",
+// note
+"tone.png",
+// bg pic
+"6.png",
+// character sfx
+"hurt.wav", "lets-go.wav", "game-over.wav", "note.mp3", 
+// ode to joy music plus parts
+"otj-1.mp3", "otj-2.mp3", "otj-3.mp3", "otj-4.mp3", "ode-to-joy-complete.mp3",
+// bg music
+"cyberpunk-moonlight-sonata-beethoven.mp3",
+// font
+"https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap"];
+
+//~~~~~~~~~~~~~~~~~~ ZIM Frame Variables ~~~~~~~~~~~~~~~~~~
+const path = "assets/";
+const scaling = "fit";
+const sWidth = 960;
+const sHeight = 540;
+const color = black;
+const outerColor = darker;
+
+new Frame(scaling, sWidth, sHeight, color, outerColor, ready, assets, path);
+function ready() {    
+    //~~~~~~~~~~~~~~~~~~ UI ~~~~~~~~~~~~~~~~~~
+    STYLE = {
+        label: {color:white, size:22, font:"MedievalSharp"},
+        button: {color:white, rollColor:dark, corner:0, width:200, height:50, backgroundColor:blue, rollBackgroundColor:dark, shadowBlur:0, shadowColor:dark},
+        progressBar: {barColor:blue, backgroundColor:dark, corner:0, shadowBlur:0, shadowColor:dark}
+    }
+    let progressPercent = 2;
+    const progress = new ProgressBar({ barType: "rectangle", width: 400}).sca(0.5).show();
+    progress.pos(0, 30, CENTER, TOP);
+    progress.percent = progressPercent;
+    let totalLives = 5;
+    let totalNotes = 4;
+    const livesCount = new Label({
+        text: "Lives: " + totalLives,
+        color: white,
+        size: 16,
+        font: "MedievalSharp"
+    }).pos(20, 50, RIGHT, TOP);
+
+    const beatIndicator = new Rectangle(sWidth, sHeight, "red").center().alp(0.1).vis(false);
+    const instruction = new Label({text: "Use WASD or Arrow Keys to move!", font:"MedievalSharp", size:14}).pos(20, 30, RIGHT, TOP);
+    instruction.color = white;
+    const bgPic = new Pic("6.png").sca(0.5).centerReg().pos(0, 0, CENTER, CENTER).bot();
+    //const ground = new Rectangle(sWidth, 200, green).addTo();
+    //ground.pos(0, sHeight - ground.height/2);
+    let retry = new Button({label: "Retry?"});
+    let compose = new Button({label: "Compose!"});
+
+    //~~~~~~~~~~~~~~~~~~ Audio - BG & SFX ~~~~~~~~~~~~~~~~~~
+    const tempo = 72;
+    const beat = 60/tempo;
+    const bg = new Aud("cyberpunk-moonlight-sonata-beethoven.mp3", 0.1, true).play();
+    Ticker.add(audioFade);
+    function audioFade(){
+        bg.volume+=0.0001;
+        if(bg.volume >= 0.5) {
+            bg.volume = 0.5;
+            Ticker.remove(audioFade);
+        }
+    }
+    const hurt = new Aud("hurt.wav", 0.6, false);
+    const noted = new Aud("note.mp3", 0.2, false);
+    const letsGo = new Aud("lets-go.wav", 0.6, false);
+    const gameOver = new Aud("game-over.wav", 0.6, false);
+    const odeToJoy = new Aud("ode-to-joy-complete.mp3", 0.6, false);
+    const otj1 = new Aud("otj-1.mp3", 0.6, false);
+    const otj2 = new Aud("otj-2.mp3", 0.6, false);
+    const otj3 = new Aud("otj-3.mp3", 0.6, false);
+    const otj4 = new Aud("otj-4.mp3", 0.6, false);
+    compose.on("click", function() {
+        letsGo.play();
+        location.href = "assemble.html";
+    });
+    retry.on("click", function() {
+        location.reload();
+    });
+
+
+    //~~~~~~~~~~~~~~~~~~ Player ~~~~~~~~~~~~~~~~~~
+    let playerScale = 0.25;
+    const glenda = new Sprite({json:"glide.json"}).sca(playerScale).pos(100, 200, LEFT, BOTTOM).run({loop:true});
+    const controller = new MotionController({
+        target:glenda, 
+        type:"keydown", 
+        speed:7, 
+        axis:"both",
+        diagonal: true,
+        flip:true,
+        damp:0.6
+    });
+    
+    //~~~~~~~~~~~~~~~~~~ Game Variables ~~~~~~~~~~~~~~~~~~
+    let beatCount = 0;
+    let shuriken;
+    let musicalNote;
+    let hitOccurred = false;
+    let hitNoted = false;
+
+    interval(beat, function () {
+        beatCount++;
+        if (beatCount == 1 || beatCount == 3) {
+            beatIndicator.vis(true);
+        } else {
+            beatIndicator.vis(false);
+        }
+        if (beatCount == 4) {
+            beatCount = 0;
+        }
+    }, null, true);
+    
+    function createShuriken(number) {
+        for (let i = 0; i < number; i++) {
+            shuriken = new Pic("shuriken-blue.png").sca(0.1)
+            .centerReg()
+            .pos(-100, rand(0, sHeight), RIGHT, TOP);
+            shuriken.animate({props:{rotation:360*5}, time: 0.5, loop:true});
+            shuriken.animate({props:{x:-200, y:glenda.y+(glenda.height/2)}, time: 1.6});
+        }
+    }
+    function createNotes(number) {
+        for (let i = 0; i < number; i++) {
+            musicalNote = new Pic("tone.png").sca(0.1)
+            .centerReg()
+            .pos(-100, rand(0, sHeight), RIGHT, TOP);
+            musicalNote.wiggle("y", musicalNote.y, 10, 100, .5, 1);
+            musicalNote.animate({props:{x:-200, y:glenda.y+(glenda.height/2)}, time: 2.5});
+        }
+    }
+    Ticker.add(checkHit);
+    Ticker.add(checkNote);
+    // using this because hittest wont work? Is it because bounds don't update with movement/animation?
+    function checkHit() {
+        if ( shuriken.x < glenda.x + (glenda.width-glenda.width/2) &&
+            shuriken.x + shuriken.width > glenda.x &&
+            shuriken.y < glenda.y + glenda.height &&
+            shuriken.y + shuriken.height > glenda.y+(glenda.height/2)) {
+                if (!hitOccurred) {
+                    zog("hit");
+                    shuriken.removeFrom();
+                    hurt.play();
+                    totalLives--;
+                    livesCount.text = "Lives: " + totalLives;
+                    if(totalLives == 0) {
+                        zog("Game Over: Music is dead.");
+                        bg.stop();
+                        gameOver.play();
+                        Ticker.remove(checkHit);
+                        Ticker.remove(checkNote);
+                        attacker.pause();
+                        notes.pause();
+                        new Pane({content: retry, titleBar: "Music is dead."}).show();
+                    }
+                    hitOccurred = true;
+                    zog("hit occured:" + hitOccurred)
+                }
+             } else {
+                    hitOccurred = false;
+                }
+    }
+    
+    
+    function checkNote() {
+        if ( musicalNote.x < glenda.x + (glenda.width-glenda.width/2) &&
+            musicalNote.x + musicalNote.width > glenda.x &&
+            musicalNote.y < glenda.y + glenda.height &&
+            musicalNote.y + musicalNote.height > glenda.y+(glenda.height/2)) {
+                if (!hitNoted) {
+                    zog("hit");
+                    musicalNote.removeFrom();
+                    noted.play();
+                    totalNotes--;
+                    progress.percent += 25;
+                    if(progress.percent >= 95) {
+                        zog("You have got the music back!");
+                        bg.stop();
+                        Ticker.remove(checkHit);
+                        Ticker.remove(checkNote);
+                        attacker.pause();
+                        notes.pause();
+                        new Pane({content: compose, titleBar: "You did it!"}).show();
+                    }
+                    hitNoted = true;
+                    zog("hit noted:" + hitNoted)
+                }
+             } else {
+                    hitNoted = false;
+                }
+    }
+
+    const attacker = interval(beat*2, function() {
+        createShuriken(1); // increase number for tougher levels
+        }, null, true);
+    const notes = interval(beat*5, function() {
+        createNotes(1);
+        }, null, true);
+}
+</script>
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+</head>
+<body></body>
+</html>

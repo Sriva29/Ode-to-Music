@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Ode to Music</title>
+<script type=module>
+import zim from "https://zimjs.com/cdn/015/zim_game";
+const assets = [
+// different player choices    
+'nancy-idle.png', 'nancy-idle.json',
+// story slides
+"1.png", "2.png", "3.png", "4.png", "5.png", "6.png", "7.png", "8.png", "9.png", "10.png",
+// bg music
+"trailer-ode-to-joy.mp3",
+"evangelion.mp3"];
+
+//~~~~~~~~~~~~~~~~~~ ZIM Frame Variables ~~~~~~~~~~~~~~~~~~
+const path = "assets/";
+const scaling = "fit";
+const sWidth = 960;
+const sHeight = 540;
+const color = black;
+const outerColor = darker;
+
+new Frame(scaling, sWidth, sHeight, color, outerColor, ready, assets, path);
+function ready() {    
+function fadeIn(pagename, time){
+    const blackRect = new Rectangle(sWidth, sHeight, black).addTo(pagename);
+    blackRect.animate({alpha:0}, time);
+    timeout(time, ()=>{
+        blackRect.removeFrom();
+    });
+}
+function fadeOut(pagename, time){
+    const blackRect = new Rectangle(sWidth, sHeight, black).addTo(pagename);
+    blackRect.alpha = 0;
+    blackRect.animate({alpha:1}, time);
+    timeout(time, ()=>{
+        blackRect.removeFrom();
+        pagename.removeFrom();
+    });
+}
+const page8 = new Page();
+const page10 = new Page();
+const picScale = 0.5;
+let playerScale = 0.25;
+const pic8 = new Pic("8.png").sca(picScale).addTo(page8);
+const pic10 = new Pic("10.png").sca(picScale).addTo(page10);
+const glenda = new Sprite({json:"nancy-idle.json"}).sca(playerScale).pos(100, 100, LEFT, BOTTOM, page8).run({loop:true});
+intro();
+function intro(){
+    page8.center();
+    fadeIn(page8, 1);
+    const bgMusic = new Aud("evangelion.mp3", 0.5, false).play();
+    timeout(57, ()=>{
+        bgMusic.stop();
+        const bgMusic2 = new Aud("trailer-ode-to-joy.mp3", 0.5, true).play();
+    });
+    timeout(32, ()=>{
+        fadeOut(page8, 3);
+        timeout(3, ()=>{
+            fadeIn(page10, 3);
+            page10.center();
+        });
+    });
+}
+}
+</script>
+<meta name="viewport" content="width=device-width, user-scalable=no" />
+</head>
+<body></body>
+</html>

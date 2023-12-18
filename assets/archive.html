@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>SriReCreate</title>
+    <script type=module>
+import zim from "https://zimjs.com/cdn/015/zim_game";
+
+const assets = ['glide.json','glide.png','nakomi.png', 'nakomi.json', 'nancy-idle.png', 'nancy-idle.json', 'nancy-run.png', 'nancy-run.json', 'nancy-jump.png', 'nancy-jump.json',
+"shuriken.png",
+"hurt.wav",
+"cyberpunk-moonlight-sonata-beethoven.mp3"];
+const path = "assets/";
+const scaling = "fit";
+const sWidth = 960;
+const sHeight = 540;
+const color = black;
+const outerColor = darker;
+new Frame(scaling, sWidth, sHeight, color, outerColor, ready, assets, path);
+
+function ready() {
+    const ground = new Rectangle(sWidth, 200, green).addTo();
+    ground.pos(0, sHeight - ground.height/2);
+    let playerScale = 0.25;
+    const tempo = 72;
+    const beat = 60/tempo;
+    const bg = new Aud("cyberpunk-moonlight-sonata-beethoven.mp3", 0.5, true).play();
+    const hurt = new Aud("hurt.wav", 0.6, false);
+    const glenda = new Sprite({json:"glide.json"}).sca(playerScale).pos(100, 200, CENTER, BOTTOM).run({loop:true});
+
+    let totalLives = 5;
+    new Label({
+        text: "Lives: " + totalLives,
+        color: white,
+        size: 22,
+        font: "Courier"
+    }).pos(30, 25, RIGHT, TOP);
+    // Use the existing x and y values of glenda
+    //const glendaBounds = {x: glenda.x, y: glenda.y, width: glenda.width, height: glenda.height};
+    //glenda.setBounds(glendaBounds);
+    //zog("glenda bounds: x=" + glenda.getBounds().x + " y=" + glenda.getBounds().y + " width=" + glenda.getBounds().width + " height=" + glenda.getBounds().height);
+
+    const controller = new MotionController({
+        target:glenda, 
+        type:"keydown", 
+        speed:7, 
+        axis:"both",
+        diagonal: true,
+        flip:true,
+        damp:0.6
+    });
+    const beatIndicator = new Rectangle(100, 100, red).pos(0, 0).addTo().vis(false);
+    let beatCount = 0;
+    // let controller;
+    interval(beat, function () {
+        // Check if it's the second or fourth beat
+        beatCount++;
+        if (beatCount === 1 || beatCount === 3) {
+            // removing controller deactivation logic because it makes the game not as much fun - need to do a lot more work to make it feel good
+            // controller = new MotionController({// target:glenda, // type:"keydown", // speed:7, // axis:"both",// diagonal: true,// flip:true,// damp:0.6// });
+            beatIndicator.vis(true);
+        } else {
+            // controller.dispose();
+            beatIndicator.vis(false);
+        }
+        // Reset beatCount after the fourth beat
+        if (beatCount === 4) {
+            beatCount = 0;
+        }
+    }, null, true);
+    let shuriken;
+    let hitOccurred = false;
+    function createShuriken(number) {
+        for (let i = 0; i < number; i++) {
+            shuriken = new Pic("shuriken-blue.png").sca(0.1)
+            .centerReg()
+            .pos(-100, rand(0, sHeight), RIGHT, TOP);
+            shuriken.animate({props:{rotation:360*5}, time: 0.5, loop:true});
+            shuriken.animate({props:{x:-200, y:glenda.y+(glenda.height/2)}, time: 1.6});
+        }
+    }
+    Ticker.add(checkHit);
+    // using this because hittest wont work? Is it because bounds don't update with movement/animation?
+    function checkHit() {
+        if ( shuriken.x < glenda.x + (glenda.width-glenda.width/2) &&
+            shuriken.x + shuriken.width > glenda.x &&
+            shuriken.y < glenda.y + glenda.height &&
+            shuriken.y + shuriken.height > glenda.y+(glenda.height/2)) {
+                if (!hitOccurred) {
+                    zog("hit");
+                    hurt.play();
+                    totalLives--;
+                    S.update();
+                    shuriken.removeFrom();
+                    zog("Lives: " + totalLives);
+                    hitOccurred = true;
+                    zog(hitOccurred)
+                } else {
+                    hitOccurred = false;
+                }
+        }
+    }
+    
+    interval(beat*2, function() {
+        createShuriken(1);
+    }, null, true);
+}
+    // Ticker.add(function() {
+    //     zog(shuriken.getBounds());
+    //     shuriken.hitTestRect(glenda, function() {
+    //         zog("hit");
+    //         //shuriken.removeFrom();
+    //     });
+    //     glenda.hitTestRect(shuriken, function() {
+    //         zog("hit");
+    //         //shuriken.removeFrom();
+    //     });
+    // });
+    // let playerSpeed = 5;
+    // let moveLeft = false;
+    // let moveRight = false;
+    // let moveUp = false;
+    // interval(beat, function(){
+    //     zog("beat");
+    //     controller.pause(false);
+    //     beatIndicator.vis(true);
+    // }, null, true);
+    // interval(beat*4, function(){
+    //     zog("can't touch this");
+    //     controller.pause(true);
+    //     beatIndicator.vis(false);
+    // }, null, true);
+    //const nancy = new Sprite({json:"nicole.json"}).sca(playerScale).pos(100, 200, CENTER, BOTTOM).run({label:"idle"});
+    //const runner = new Container(nancy.width,nancy.height).addTo();
+    //nancy.addTo(runner);
+//     const nakomi = new Sprite({json:"nancy-idle.json"}).sca(playerScale).pos(100, 200, CENTER, BOTTOM).run();
+//     nakomi.vy = 0;
+//     function playerControl(){
+//         F.on("keydown", function(e){
+//             if( e.keyCode == 37 || e.keyCode == 39){
+//                 nakomi.run({label:"run"});
+//                 if (e.keyCode == 37){
+//                     moveLeft = true;
+//                     moveRight = false;
+//                     nakomi.sca(-playerScale, playerScale); 
+//                 }
+//                 if (e.keyCode == 39){
+//                     moveRight = true;
+//                     moveLeft = false;
+//                     nakomi.sca(playerScale, playerScale);
+//                 }
+//             }
+//             if (e.keyCode == 38){
+//                 nakomi.run({label:"run"});
+//                 moveUp = true;
+//             }
+//         });
+
+//         F.on("keyup", function(e){
+//             if (e.keyCode == 37 || e.keyCode == 39){
+//                 moveLeft = false;
+//                 moveRight = false;
+//                 nakomi.run({label:"idle"})
+//             }
+//             if (e.keyCode == 38){
+//                 moveUp = false;
+//             }
+//         });
+//     }
+// // make frame rate rely on delta (like time delta in unity)
+//     function movePlayer(){
+//         if (moveLeft){
+//             //nancy.run({label:"run"});
+//             //nancy.y = nancy.y;
+//             nakomi.x -= playerSpeed;
+//         }
+//         if (moveRight){
+//             //nancy.run({label:"run"});
+//             //nancy.y = nancy.y;
+//             nakomi.x += playerSpeed;
+//         }
+//         if(moveUp){
+//             jump();
+//         }
+//     }
+//     function jump(){
+//         nakomi.vy = -10;
+//         nakomi.run({label:"run"});
+//     }
+    
+
+//     function gravity(){
+//         nakomi.vy += 0.5; 
+//         nakomi.y += nakomi.vy;
+//         nakomi.run({label:"run"});
+//     // Check for landing
+//         if (nakomi.y > ground.y - nakomi.height/2){
+//             nakomi.y = ground.y - nakomi.height/2;
+//             nakomi.vy = 0;
+//             moveUp = false; 
+            
+//             if (moveLeft || moveRight) {
+//                 nakomi.run({label:"run"})
+//             } else {
+//                 //nancy.run({label:"idle"})
+//             }
+//         }
+//     }
+
+//     Ticker.add(playerControl);
+//     Ticker.add(movePlayer);
+//     Ticker.add(gravity);
+//} //end of ready
+</script>
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+</head>
+
+<body></body>
+
+</html>
