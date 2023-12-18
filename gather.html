@@ -32,7 +32,26 @@ const color = black;
 const outerColor = darker;
 
 new Frame(scaling, sWidth, sHeight, color, outerColor, ready, assets, path);
-function ready() {    
+function ready() {
+let instructionPage = new Page().addTo();
+instructionPage.color = black; 
+    function begin(){
+        const instruction = new Label({text: "Use WASD or Arrow Keys to move!",color:white, font:"MedievalSharp", size:24}).pos(0, 150, CENTER, TOP, instructionPage);
+        const shuriken = new Pic("shuriken-blue.png").sca(0.1).centerReg().pos(150, 0, LEFT, CENTER, instructionPage);
+        const avoidLabel = new Label({text: "Avoid the shurikens!",color:white, font:"MedievalSharp", size:24}).pos(75, 60, LEFT, CENTER, instructionPage);
+        const musicalNote = new Pic("tone.png").sca(0.1).centerReg().pos(190, 0, RIGHT, CENTER, instructionPage);
+        const collectLabel = new Label({text: "Collect the musical notes!",color:white, font:"MedievalSharp", size:24}).pos(75, 60, RIGHT, CENTER, instructionPage);
+        new Label({
+            text:"Click to Begin",
+            color:white,
+            size: 50,
+            font:"fantasy",
+        }).pos(0,100,CENTER, BOTTOM, instructionPage).cur().on("click", ()=>{game();});
+    }
+    begin();
+    
+    function game(){
+    instructionPage.removeFrom();
     //~~~~~~~~~~~~~~~~~~ UI ~~~~~~~~~~~~~~~~~~
     STYLE = {
         label: {color:white, size:22, font:"MedievalSharp"},
@@ -208,6 +227,7 @@ function ready() {
     const notes = interval(beat*5, function() {
         createNotes(1);
         }, null, true);
+    }
 }
 </script>
     <meta name="viewport" content="width=device-width, user-scalable=no" />
