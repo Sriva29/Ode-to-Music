@@ -51,6 +51,7 @@ function ready() {
             pagename.removeFrom();
         });
     }
+    const page0 = new Page();
     const page1 = new Page();
     const page2 = new Page();
     const page3 = new Page();
@@ -110,9 +111,15 @@ function ready() {
     const page4Audio = new Aud("sadness.mp3", 0.5, false); //4 seconds
     const page5Audio = new Aud("rediscover.mp3", 0.5, false); //4 seconds
 
-
-    const pages = [page1, page2, page3, page4, page5, page6, page7, page8, page9, page10];
-    //intro();
+    function begin(){
+        new Label({
+            text:"Click to Begin",
+            color:white,
+            size: 50,
+            font:"fantasy",
+        }).centerReg().cur().on("click", ()=>{intro();});
+    }
+    begin();
 
     function intro(){
         page1.center();
