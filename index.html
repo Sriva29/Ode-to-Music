@@ -106,10 +106,7 @@ function ready() {
     // // .pos(0, 0, CENTER, CENTER)
     // .addTo(page10);
 
-    const page2Audio = new Aud("a-long-time-ago.mp3", 0.5, false); // 11 seconds
-    const page3Audio = new Aud("the-ennui.mp3", 0.5, false); //6 seconds
-    const page4Audio = new Aud("sadness.mp3", 0.5, false); //4 seconds
-    const page5Audio = new Aud("rediscover.mp3", 0.5, false); //4 seconds
+
 
     function begin(){
         new Label({
@@ -123,7 +120,10 @@ function ready() {
 
     function intro(){
         page1.center();
-        
+        const page2Audio = new Aud("a-long-time-ago.mp3", 0.5, false); // 11 seconds
+        const page3Audio = new Aud("the-ennui.mp3", 0.5, false); //6 seconds
+        const page4Audio = new Aud("sadness.mp3", 0.5, false); //4 seconds
+        const page5Audio = new Aud("rediscover.mp3", 0.5, false); //4 seconds        
         fadeIn(page1, 1);
         const bg = new Aud("trailer-ode-to-joy.mp3", 0.5, true).play();
         timeout(5, ()=>{
